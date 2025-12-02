@@ -1,0 +1,1161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>SeamanAgency -  Connect</title>
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+  
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+
+  <style>
+    :root {
+      /*  Dark Mode Palette */
+      ---bg: #000000;
+      ---card: rgba(28, 28, 30, 0.65);
+      ---card-solid: #1c1c1e;
+      ---input: rgba(118, 118, 128, 0.24);
+      ---primary: #0A84FF; /*  Blue */
+      ---secondary: #5E5CE6; /*  Indigo */
+      ---success: #30D158;
+      ---danger: #FF453A;
+      ---warning: #FFD60A;
+      ---text: #FFFFFF;
+      ---text-secondary: #8E8E93;
+      ---border: rgba(255, 255, 255, 0.12);
+      ---blur: blur(25px) saturate(180%);
+      --radius-sm: 10px;
+      --radius-md: 14px;
+      --radius-lg: 22px;
+      --radius-xl: 38px;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+    body {
+      background-color: var(---bg);
+      /* Futuristic Wallpaper Mesh */
+      background-image: 
+        radial-gradient(circle at 0% 0%, rgba(10, 132, 255, 0.15), transparent 40%),
+        radial-gradient(circle at 100% 100%, rgba(94, 92, 230, 0.15), transparent 40%);
+      background-attachment: fixed;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      color: var(---text);
+      line-height: 1.5;
+      min-height: 100vh;
+      padding-bottom: 40px;
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 0px; background: transparent; }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+      padding-top: env(safe-area-inset-top);
+    }
+
+    /* ---  Header (Dynamic Island Style) --- */
+    header {
+      position: sticky;
+      top: 10px;
+      z-index: 1000;
+      margin-bottom: 30px;
+    }
+
+    .header-content {
+      background: rgba(28, 28, 30, 0.75);
+      backdrop-filter: var(---blur);
+      -webkit-backdrop-filter: var(---blur);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 50px;
+      padding: 12px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+      transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    }
+
+    h1 {
+      font-size: 17px;
+      font-weight: 600;
+      letter-spacing: -0.5px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    h1 i { color: var(---primary); }
+
+    /* Sync Status pill */
+    .sync-status {
+      font-size: 11px;
+      font-weight: 500;
+      color: var(---text-secondary);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .sync-indicator { width: 6px; height: 6px; border-radius: 50%; background: var(---text-secondary); }
+    .sync-indicator.connected { background: var(---success); box-shadow: 0 0 8px var(---success); }
+    .sync-indicator.syncing { background: var(---warning); }
+    .sync-indicator.error { background: var(---danger); }
+
+    /* User Profile Pill */
+    .user-info { display: flex; align-items: center; gap: 12px; }
+    #userEmail { font-size: 12px; color: var(---text-secondary); display: none; } /* Hidden on mobile for cleaner look */
+    @media(min-width: 768px) { #userEmail { display: block; } }
+
+    /* --- Buttons ( Action Style) --- */
+    button {
+      font-family: inherit;
+      border: none;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 15px;
+      border-radius: 50px; /* Capsule */
+      transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    button:active { transform: scale(0.96); }
+
+    .btn-primary {
+      background: var(---primary);
+      color: white;
+      padding: 12px 24px;
+      box-shadow: 0 4px 15px rgba(10, 132, 255, 0.3);
+    }
+    .btn-secondary {
+      background: rgba(255,255,255,0.1);
+      color: var(---primary);
+      padding: 12px 20px;
+      backdrop-filter: blur(10px);
+    }
+    .logout-btn {
+      padding: 6px 12px;
+      background: rgba(255, 69, 58, 0.15);
+      color: var(---danger);
+      border-radius: 14px;
+      font-size: 12px;
+    }
+
+    .btn-group {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 25px;
+      overflow-x: auto;
+      padding-bottom: 5px;
+      -webkit-overflow-scrolling: touch;
+    }
+    .btn-group::-webkit-scrollbar { display: none; }
+
+    /* --- Cards & Containers (Glass) --- */
+    .search-container, .form-container, .login-container, .title-dialog {
+      background: var(---card);
+      backdrop-filter: var(---blur);
+      -webkit-backdrop-filter: var(---blur);
+      border: 1px solid var(---border);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      margin-bottom: 20px;
+      animation: SlideUp 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+
+    @keyframes SlideUp {
+      from { opacity: 0; transform: translateY(20px) scale(0.98); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    /* --- Inputs ( Text Field) --- */
+    input, select, textarea {
+      width: 100%;
+      background: var(---input);
+      border: none;
+      border-radius: var(--radius-md);
+      padding: 16px;
+      color: white;
+      font-size: 17px; /*  standard size prevents zoom */
+      margin-bottom: 0;
+      transition: background 0.2s;
+    }
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      background: rgba(118, 118, 128, 0.4);
+    }
+    label {
+      color: var(---text-secondary);
+      font-size: 13px;
+      margin-bottom: 6px;
+      margin-left: 4px;
+      font-weight: 500;
+      display: block;
+    }
+    .form-group { margin-bottom: 16px; }
+
+    /* --- Typography Headers --- */
+    h2, h3, h4 {
+      font-weight: 700;
+      letter-spacing: 0.3px;
+      margin-bottom: 20px;
+    }
+    .form-title { font-size: 22px; display: flex; align-items: center; gap: 12px; }
+    .form-title i { 
+      background: var(---primary); 
+      color: white; 
+      width: 32px; height: 32px; 
+      display: flex; align-items: center; justify-content: center; 
+      border-radius: 8px; font-size: 16px; 
+    }
+
+    /* --- Login Screen --- */
+    .login-container {
+      max-width: 400px;
+      margin: 10vh auto;
+      text-align: center;
+      background: transparent; /* Clearer look for login */
+      border: none;
+      backdrop-filter: none;
+    }
+    .login-container h2 { font-size: 28px; margin-bottom: 40px; background: linear-gradient(to right, #fff, #8E8E93); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .login-form {
+      background: var(---card);
+      backdrop-filter: var(---blur);
+      padding: 30px;
+      border-radius: var(--radius-xl);
+      border: 1px solid var(---border);
+    }
+    .login-btn { width: 100%; margin-top: 20px; border-radius: 14px; font-size: 17px; }
+
+    /* --- Form Grid --- */
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 20px;
+    }
+
+    /* --- Checkboxes ( Toggle/List Style) --- */
+    .checkbox-group {
+      background: rgba(0,0,0,0.2);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      margin-top: 20px;
+    }
+    .checkbox-section-title {
+      color: var(---primary);
+      font-size: 13px;
+      font-weight: 600;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+      padding-left: 5px;
+    }
+    .checkbox-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .checkbox-item {
+      background: rgba(255,255,255,0.08);
+      border-radius: 20px;
+      padding: 8px 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+    .checkbox-item:has(input:checked) {
+      background: var(---primary);
+      color: white;
+    }
+    .checkbox-item input { width: auto; margin: 0; background: transparent; display: none; } /* Hide default checkbox */
+    .checkbox-item label { margin: 0; color: inherit; cursor: pointer; font-size: 14px; font-weight: 500; }
+
+    /* --- Profile Cards ( Widgets) --- */
+    .profile-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 20px;
+    }
+    .profile-card {
+      background: var(---card);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      border: 1px solid var(---border);
+      transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+      position: relative;
+    }
+    .profile-card:active { transform: scale(0.98); }
+    .card-header {
+      padding: 16px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      background: rgba(255,255,255,0.03);
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+    .card-avatar {
+      width: 48px; height: 48px;
+      background: linear-gradient(135deg, var(---primary), var(---secondary));
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px; color: white;
+      box-shadow: 0 4px 10px rgba(10, 132, 255, 0.4);
+    }
+    .card-header h3 { margin: 0; font-size: 17px; font-weight: 600; }
+    .card-header p { margin: 0; color: var(---text-secondary); font-size: 13px; margin-top: 2px; }
+    
+    .card-body { padding: 16px; }
+    .card-detail {
+      display: flex; justify-content: space-between;
+      padding: 8px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      font-size: 14px;
+    }
+    .card-detail:last-child { border: none; }
+    .detail-label { color: var(---text-secondary); }
+    .detail-value { font-weight: 500; }
+
+    /* --- Loading Spinner (Dynamic Island Morph) --- */
+    .loading {
+      display: none;
+      position: fixed;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(20,20,20,0.9);
+      backdrop-filter: blur(40px);
+      padding: 30px;
+      border-radius: 25px;
+      z-index: 2000;
+      text-align: center;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+    }
+    .spinner {
+      width: 40px; height: 40px;
+      border: 4px solid rgba(255,255,255,0.1);
+      border-top-color: var(---primary);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto 15px;
+    }
+    @keyframes spin{to{transform:rotate(360deg)}}
+
+    /* --- Title Dialog (Bottom Sheet Style) --- */
+    .title-options { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px; }
+    .title-option {
+      background: rgba(255,255,255,0.05);
+      border-radius: var(--radius-md);
+      padding: 20px;
+      text-align: center;
+      border: 2px solid transparent;
+      transition: 0.2s;
+    }
+    .title-option.active {
+      background: rgba(10, 132, 255, 0.15);
+      border-color: var(---primary);
+    }
+    .title-option i { font-size: 32px; margin-bottom: 10px; display: block; }
+
+    /* --- Progress Bar --- */
+    .progress-bar { background: rgba(255,255,255,0.1); border-radius: 10px; height: 6px; overflow: hidden; margin-top: 8px; }
+    .progress { height: 100%; border-radius: 10px; transition: width 0.5s ease; }
+
+    /* --- Webcam --- */
+    .webcam-preview {
+      background: black;
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      aspect-ratio: 4/3;
+      margin-bottom: 15px;
+      display: flex; align-items: center; justify-content: center;
+      border: 1px solid var(---border);
+    }
+    
+    /* Utilities */
+    .hidden-field { display: none !important; }
+    .date-search { display: flex; gap: 10px; margin-top: 15px; flex-wrap: wrap; }
+    .search-box { display: flex; gap: 10px; }
+    
+    footer {
+      text-align: center;
+      margin-top: 40px;
+      color: var(---text-secondary);
+      font-size: 11px;
+    }
+
+    /* Mobile Tweaks */
+    @media (max-width: 600px) {
+      .header-content { padding: 10px 16px; border-radius: 30px; }
+      h1 { font-size: 15px; }
+      .search-box { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="header-content">
+        <h1><i class="fa-brands fa-sea" style="font-size: 18px;"></i> SEAMAN AGENCY</h1>
+        <div class="user-info" id="userInfo" style="display:none">
+          <div class="sync-status">
+            <div class="sync-indicator" id="syncIndicator"></div>
+            <span id="syncStatus">Init...</span>
+          </div>
+          <span id="userEmail"></span>
+          <button id="logoutBtn" class="logout-btn"><i class="fa-solid fa-power-off"></i></button>
+        </div>
+      </div>
+    </header>
+
+    <div class="loading" id="loading">
+      <div class="spinner"></div>
+      <p id="loadingText" style="font-size:14px; font-weight:500;">Processing...</p>
+    </div>
+
+    <div id="loginContainer" class="login-container">
+      <h2>Welcome Back</h2>
+      <form id="loginForm" class="login-form">
+        <div class="form-group" style="margin-bottom:20px;text-align:left">
+          <label for="email">Apple ID / Email</label>
+          <input type="email" id="email" placeholder="example@icloud.com" required/>
+        </div>
+        <div class="form-group" style="margin-bottom:20px;text-align:left">
+          <label for="password">Password</label>
+          <input type="password" id="password" placeholder="••••••••" required/>
+        </div>
+        <button type="submit" class="login-btn btn-primary">Sign In</button>
+      </form>
+    </div>
+
+    <div id="mainContent" style="display:none">
+      <div class="btn-group">
+        <button id="addDataBtn" class="btn-primary"><i class="fa-solid fa-plus"></i> Add New</button>
+        <button id="searchBtn" class="btn-secondary"><i class="fa-solid fa-magnifying-glass"></i> Search</button>
+        <button id="exportBtn" class="btn-secondary" style="margin-left:auto"><i class="fa-solid fa-cloud-arrow-down"></i> CSV</button>
+      </div>
+
+      <div id="searchContainer" class="search-container" style="display:none">
+        <h3 style="margin-bottom:15px">Database Search</h3>
+        <div class="search-box">
+          <input type="text" id="searchInput" placeholder="Search by name, rank, or CDC..."/>
+          <button id="searchSubmit" class="btn-primary" style="min-width: 100px;">Go</button>
+        </div>
+        <div class="date-search">
+          <input type="date" id="dateFrom"/>
+          <input type="date" id="dateTo"/>
+          <button id="dateSearch" class="btn-secondary" style="width:100%">Filter by Date</button>
+        </div>
+      </div>
+
+      <div id="titleDialog" class="title-dialog" style="display:none">
+        <h2 class="form-title" style="justify-content:center">Select Document Type</h2>
+        <div class="title-options">
+          <div class="title-option" id="newCDCOption">
+            <i class="fa-regular fa-file-lines" style="color:var(---primary)"></i>
+            <h3>NEW CDC</h3>
+            <p style="font-size:12px; color:var(---text-secondary)">Issue new booklet</p>
+          </div>
+          <div class="title-option" id="revalidationOption">
+            <i class="fa-solid fa-rotate" style="color:var(---secondary)"></i>
+            <h3>REVALIDATION</h3>
+            <p style="font-size:12px; color:var(---text-secondary)">Update existing</p>
+          </div>
+        </div>
+
+        <div class="sub-options" id="revalidationSubOptions" style="display:none; margin-top:20px; background:rgba(255,255,255,0.03); padding:15px; border-radius:15px;">
+          <h4 style="text-align:center; font-size:14px; color:var(---text-secondary)">CLASSIFICATION</h4>
+          <div class="title-options" style="margin-top:10px">
+            <div class="title-option" id="crewOption">
+              <i class="fa-solid fa-users"></i>
+              <h4>CREW</h4>
+            </div>
+            <div class="title-option" id="officerOption">
+              <i class="fa-solid fa-user-tie"></i>
+              <h4>OFFICER</h4>
+            </div>
+          </div>
+
+          <div class="checkbox-group hidden-field" id="crewDocsTemplate">
+            <div class="checkbox-section-title">Crew Documents</div>
+            <div class="checkbox-row">
+              <div class="checkbox-item"><label><input type="checkbox" name="crewCertificates" value="4-Ticket" id="crew_4ticket"> 4-Ticket</label></div>
+              <div class="checkbox-item"><label><input type="checkbox" name="crewCertificates" value="PSC" id="crew_psc"> PSC</label></div>
+              <div class="checkbox-item"><label><input type="checkbox" name="crewCertificates" value="TANKER" id="crew_TANKER"> TANKER</label></div>
+              <div class="checkbox-item"><label><input type="checkbox" name="crewCertificates" value="CMC" id="crew_cmc"> CMC</label></div>
+            </div>
+          </div>
+
+          <div class="checkbox-group hidden-field" id="officerDocsTemplate">
+            <div class="checkbox-section-title">Officer Documents</div>
+            <div class="checkbox-row">
+              <div class="checkbox-item"><label><input type="checkbox" name="officerCertificates" value="AFF" id="off_aff"> AFF</label></div>
+              <div class="checkbox-item"><label><input type="checkbox" name="officerCertificates" value="PSC" id="off_psc"> PSC</label></div>
+              <div class="checkbox-item"><label><input type="checkbox" name="officerCertificates" value="MFA" id="off_mfa"> MFA</label></div>
+              <div class="checkbox-item"><label><input type="checkbox" name="officerCertificates" value="CMC" id="off_cmc"> CMC</label></div>
+              <div class="checkbox-item"><label><input type="checkbox" name="officerCertificates" value="G.O.C" id="off_gdc"> G.O.C</label></div>
+              <div class="checkbox-item"><label><input type="checkbox" name="officerCertificates" value="C.O.C" id="off_cdc"> C.O.C</label></div>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-top:30px; display:flex; gap:10px;">
+          <button id="cancelTitle" class="btn-secondary" style="flex:1">Cancel</button>
+          <button id="confirmTitle" class="btn-primary" style="flex:1">Continue</button>
+        </div>
+      </div>
+
+      <div id="formContainer" class="form-container" style="display:none">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:25px;">
+           <h2 class="form-title" style="margin:0">New Profile</h2>
+           <button type="button" id="cancelBtn" style="background:none; color:var(---primary); font-size:15px;">Cancel</button>
+        </div>
+        
+        <form id="profileForm">
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="name">Full Name</label>
+              <input type="text" id="name" required placeholder=" "/>
+            </div>
+            <div class="form-group">
+              <label for="rank">Rank</label>
+              <select id="rank" required>
+                <option value="">Select Rank</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="cdcNumber">CDC Number</label>
+              <input type="text" id="cdcNumber" required placeholder=""/>
+            </div>
+            <div class="form-group">
+              <label for="phone">Phone Number</label>
+              <input type="tel" id="phone" required placeholder="..."/>
+            </div>
+            <div class="form-group">
+              <label for="address">Address</label>
+              <textarea id="address" required rows="1" placeholder=""></textarea>
+            </div>
+            <div class="form-group">
+              <label for="passportNumber">Passport Number</label>
+              <input type="text" id="passportNumber"/>
+            </div>
+            <div class="form-group">
+              <label for="passportExpiry">Passport Expiry</label>
+              <input type="text" id="passportExpiry" placeholder="DD/MM/YYYY"/>
+            </div>
+
+            <div class="form-group hidden-field new-cdc-only">
+              <label for="nrc">NRC Number</label>
+              <input type="text" id="nrc" placeholder="e.g., 12/ABC(N)123456"/>
+            </div>
+            <div class="form-group hidden-field new-cdc-only">
+              <label for="fatherName">Father's Name</label>
+              <input type="text" id="fatherName"/>
+            </div>
+            <div class="form-group hidden-field new-cdc-only">
+              <label for="motherName">Mother's Name</label>
+              <input type="text" id="motherName"/>
+            </div>
+            <div class="form-group hidden-field new-cdc-only">
+              <label for="birthdate">Birthdate</label>
+              <input type="text" id="birthdate" placeholder="DD/MM/YYYY" pattern="\d{2}/\d{2}/\d{4}"/>
+            </div>
+            <div class="form-group hidden-field new-cdc-only">
+              <label for="distinguishingMark">Distinguishing Mark</label>
+              <input type="text" id="distinguishingMark"/>
+            </div>
+            <div class="form-group hidden-field new-cdc-only">
+              <label for="fees">Fees Amount ($)</label>
+              <input type="number" id="fees"/>
+            </div>
+            <div class="form-group hidden-field new-cdc-only">
+              <label for="feesPercentage">Payment Status (%)</label>
+              <input type="number" id="feesPercentage" min="0" max="100"/>
+              <div class="progress-bar"><div class="progress" id="feesProgress"></div></div>
+            </div>
+            <div class="form-group hidden-field new-cdc-only">
+              <label for="pssrName">PSSR Name</label>
+              <input type="text" id="pssrName"/>
+            </div>
+
+            <div class="form-group" style="grid-column:1/-1">
+              <label for="remark">Remark</label>
+              <textarea id="remark" rows="3" placeholder="Additional notes..."></textarea>
+            </div>
+          </div>
+
+          <div class="webcam-container" style="background:rgba(0,0,0,0.2); padding:20px; border-radius:18px; margin-top:20px;">
+            <div class="checkbox-section-title">Identity Photo</div>
+            <div class="webcam-preview" id="webcamPreview">
+              <i class="fa-solid fa-camera" style="font-size:40px;opacity:.5"></i>
+            </div>
+            <div class="webcam-controls" style="display:flex; justify-content:center; gap:10px;">
+              <button type="button" id="startCamera" class="btn-secondary"><i class="fa-solid fa-video"></i> Start</button>
+              <button type="button" id="capturePhoto" class="btn-primary" disabled><i class="fa-solid fa-camera-shutter"></i> Snap</button>
+              <button type="button" id="retakePhoto" class="btn-secondary" disabled><i class="fa-solid fa-rotate-left"></i></button>
+            </div>
+            <input type="hidden" id="profilePhoto"/>
+          </div>
+
+          <div id="revalidationDocsContainer" class="checkbox-group hidden-field"></div>
+
+          <div class="checkbox-group hidden-field new-cdc-only">
+            <div class="checkbox-section">
+              <div class="checkbox-section-title">Core Documents</div>
+              <div class="checkbox-row">
+                <div class="checkbox-item"><label><input type="checkbox" id="bst" name="certificates" value="BST"> BST</label></div>
+                <div class="checkbox-item"><label><input type="checkbox" id="pd" name="certificates" value="PD"> PD</label></div>
+                <div class="checkbox-item"><label><input type="checkbox" id="pe" name="certificates" value="PE"> PE</label></div>
+                <div class="checkbox-item"><label><input type="checkbox" id="cck" name="certificates" value="CCK"> CCK</label></div>
+              </div>
+            </div>
+            <div class="checkbox-section" style="margin-top:15px">
+              <div class="checkbox-section-title">Additional</div>
+              <div class="checkbox-row">
+                <div class="checkbox-item"><label><input type="checkbox" id="ssa" name="certificates" value="SSA"> SSA</label></div>
+                <div class="checkbox-item"><label><input type="checkbox" id="dsd" name="certificates" value="DSD"> DSD</label></div>
+                <div class="checkbox-item"><label><input type="checkbox" id="cdc" name="certificates" value="CDC"> CDC</label></div>
+                <div class="checkbox-item"><label><input type="checkbox" id="cmc" name="certificates" value="CMC"> CMC</label></div>
+              </div>
+            </div>
+            <div class="checkbox-section" style="margin-top:15px">
+              <div class="checkbox-section-title">Special</div>
+              <div class="checkbox-row">
+                <div class="checkbox-item"><label><input type="checkbox" id="pscSpecial" name="certificates" value="PSC"> PSC</label></div>
+                <div class="checkbox-item"><label><input type="checkbox" id="tff" name="certificates" value="TFF"> TFF</label></div>
+                <div class="checkbox-item"><label><input type="checkbox" id="aio" name="certificates" value="AIO"> AIO</label></div>
+                <div class="checkbox-item"><label><input type="checkbox" id="sid" name="certificates" value="SID"> SID</label></div>
+              </div>
+            </div>
+          </div>
+
+          <div style="text-align:center;margin-top:40px;">
+            <button type="submit" class="btn-primary" style="width:100%; padding:15px; font-size:18px;">Save Profile</button>
+          </div>
+        </form>
+      </div>
+
+      <div id="profileCards" class="profile-cards">
+        <div class="no-results" id="noResults" style="grid-column:1/-1; text-align:center; padding:50px; opacity:0.6;">
+          <i class="fa-solid fa-database" style="font-size:40px;margin-bottom:15px;"></i><br/>
+          Loading Database...
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      <p>&copy; 2025 Seaman Agency  System</p>
+    </footer>
+  </div>
+
+  <script>
+    // Keep original Logic exact same to prevent breaking features
+    const firebaseConfig={
+      apiKey:"AIzaSyDP34-uI6YNf56YUax0zLQ7y_TWad52rA0",
+      authDomain:"seameandatabase.firebaseapp.com",
+      projectId:"seameandatabase",
+      storageBucket:"seameandatabase.firebasestorage.app",
+      messagingSenderId:"1078604355486",
+      appId:"G-16GVDL26Q3"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db=firebase.firestore();
+    const auth=firebase.auth();
+
+    let profiles=[];
+    let selectedTitle='';
+    let selectedRevalidationType='';
+    let stream=null;
+    let capturedPhoto=null;
+
+    const loading=document.getElementById('loading');
+    const loadingText=document.getElementById('loadingText');
+    const syncIndicator=document.getElementById('syncIndicator');
+    const syncStatus=document.getElementById('syncStatus');
+    const loginContainer=document.getElementById('loginContainer');
+    const loginForm=document.getElementById('loginForm');
+    const mainContent=document.getElementById('mainContent');
+    const userInfo=document.getElementById('userInfo');
+    const userEmail=document.getElementById('userEmail');
+    const logoutBtn=document.getElementById('logoutBtn');
+    const exportBtn=document.getElementById('exportBtn');
+    const addDataBtn=document.getElementById('addDataBtn');
+    const searchBtn=document.getElementById('searchBtn');
+    const searchContainer=document.getElementById('searchContainer');
+    const formContainer=document.getElementById('formContainer');
+    const profileForm=document.getElementById('profileForm');
+    const profileCards=document.getElementById('profileCards');
+    const searchInput=document.getElementById('searchInput');
+    const searchSubmit=document.getElementById('searchSubmit');
+    const dateFrom=document.getElementById('dateFrom');
+    const dateTo=document.getElementById('dateTo');
+    const dateSearch=document.getElementById('dateSearch');
+    const cancelBtn=document.getElementById('cancelBtn');
+    const noResults=document.getElementById('noResults');
+    const feesPercentage=document.getElementById('feesPercentage');
+    const feesProgress=document.getElementById('feesProgress');
+
+    const titleDialog=document.getElementById('titleDialog');
+    const newCDCOption=document.getElementById('newCDCOption');
+    const revalidationOption=document.getElementById('revalidationOption');
+    const revalidationSubOptions=document.getElementById('revalidationSubOptions');
+    const crewOption=document.getElementById('crewOption');
+    const officerOption=document.getElementById('officerOption');
+    const confirmTitle=document.getElementById('confirmTitle');
+    const cancelTitle=document.getElementById('cancelTitle');
+
+    const crewDocsTemplate=document.getElementById('crewDocsTemplate');
+    const officerDocsTemplate=document.getElementById('officerDocsTemplate');
+    const revalidationDocsContainer=document.getElementById('revalidationDocsContainer');
+
+    const webcamPreview=document.getElementById('webcamPreview');
+    const startCamera=document.getElementById('startCamera');
+    const capturePhoto=document.getElementById('capturePhoto');
+    const retakePhoto=document.getElementById('retakePhoto');
+    const profilePhoto=document.getElementById('profilePhoto');
+    const rankSelect=document.getElementById('rank');
+
+    document.addEventListener('DOMContentLoaded',initApp);
+    loginForm.addEventListener('submit',loginUser);
+    logoutBtn.addEventListener('click',logoutUser);
+    exportBtn.addEventListener('click',exportToCSV);
+    addDataBtn.addEventListener('click',showTitleDialog);
+    searchBtn.addEventListener('click',showSearch);
+    profileForm.addEventListener('submit',saveProfile);
+    searchSubmit.addEventListener('click',searchProfiles);
+    dateSearch.addEventListener('click',searchByDate);
+    cancelBtn.addEventListener('click',hideForm);
+    feesPercentage.addEventListener('input',updateProgressBar);
+
+    newCDCOption.addEventListener('click',()=>selectTitle('NEW CDC'));
+    revalidationOption.addEventListener('click',()=>selectTitle('REVALIDATION'));
+    crewOption.addEventListener('click',()=>selectRevalidationType('CREW'));
+    officerOption.addEventListener('click',()=>selectRevalidationType('OFFICER'));
+    confirmTitle.addEventListener('click',confirmTitleSelection);
+    cancelTitle.addEventListener('click',hideTitleDialog);
+
+    startCamera.addEventListener('click',startWebcam);
+    capturePhoto.addEventListener('click',captureWebcam);
+    retakePhoto.addEventListener('click',retakeWebcam);
+
+    function initApp(){
+      updateSyncStatus('Connecting...','syncing');
+      auth.onAuthStateChanged(user=>{
+        if(user){
+          userEmail.textContent=user.email;
+          userInfo.style.display='flex';
+          loginContainer.style.display='none';
+          mainContent.style.display='block';
+          updateSyncStatus('Online','connected');
+          loadDataFromFirebase();
+        }else{
+          userInfo.style.display='none';
+          loginContainer.style.display='block';
+          mainContent.style.display='none';
+          updateSyncStatus('Signed Out','error');
+        }
+      });
+    }
+
+    async function loginUser(e){
+      e.preventDefault();
+      const email=document.getElementById('email').value;
+      const password=document.getElementById('password').value;
+      showLoading('Verifying ID...');
+      try{
+        await auth.signInWithEmailAndPassword(email,password);
+      }catch(err){
+        alert('Login failed: '+err.message);
+      }finally{hideLoading()}
+    }
+
+    async function logoutUser(){
+      showLoading('Signing out...');
+      try{await auth.signOut()}catch(err){/* noop */}finally{hideLoading()}
+    }
+
+    function updateSyncStatus(message,status='connected'){
+      syncStatus.textContent=message;
+      syncIndicator.className='sync-indicator '+status;
+    }
+
+    async function loadDataFromFirebase(){
+      showLoading('Syncing Data...');
+      try{
+        const snapshot=await db.collection('profiles').orderBy('timestamp','desc').get();
+        profiles=[];
+        snapshot.forEach(doc=>{const p=doc.data();p.id=doc.id;profiles.push(p)});
+        updateSyncStatus(`${profiles.length} Records`,'connected');
+        displayProfiles(profiles);
+      }catch(error){
+        try{
+          const snapshot=await db.collection('profiles').get();
+          profiles=[];
+          snapshot.forEach(doc=>{const p=doc.data();p.id=doc.id;profiles.push(p)});
+          displayProfiles(profiles);
+        }catch(e){
+          updateSyncStatus('Offline','error');
+        }
+      }finally{hideLoading()}
+    }
+
+    async function saveProfile(e){
+      e.preventDefault();
+      const selectedCertificates=[];
+      if(selectedTitle==='NEW CDC'){
+        document.querySelectorAll('input[name="certificates"]:checked').forEach(cb=>selectedCertificates.push(cb.value));
+      }else if(selectedTitle==='REVALIDATION'){
+        if(selectedRevalidationType==='CREW'){
+          revalidationDocsContainer.querySelectorAll('input[name="crewCertificates"]:checked').forEach(cb=>selectedCertificates.push(cb.value));
+        }else if(selectedRevalidationType==='OFFICER'){
+          revalidationDocsContainer.querySelectorAll('input[name="officerCertificates"]:checked').forEach(cb=>selectedCertificates.push(cb.value));
+        }
+      }
+
+      const profile={
+        name:document.getElementById('name').value,
+        rank:document.getElementById('rank').value,
+        cdcNumber:document.getElementById('cdcNumber').value,
+        phone:document.getElementById('phone').value,
+        address:document.getElementById('address').value,
+        passportNumber:document.getElementById('passportNumber').value,
+        passportExpiry:document.getElementById('passportExpiry').value,
+        remark:document.getElementById('remark').value,
+        title:selectedTitle,
+        revalidationType:selectedRevalidationType,
+        profilePhoto:capturedPhoto,
+        certificates:selectedCertificates.join(', '),
+        timestamp:firebase.firestore.FieldValue.serverTimestamp()
+      };
+
+      if(selectedTitle==='NEW CDC'){
+        profile.nrc=document.getElementById('nrc').value;
+        profile.fatherName=document.getElementById('fatherName').value;
+        profile.motherName=document.getElementById('motherName').value;
+        profile.birthdate=document.getElementById('birthdate').value;
+        profile.distinguishingMark=document.getElementById('distinguishingMark').value;
+        profile.fees=document.getElementById('fees').value;
+        profile.feesPercentage=document.getElementById('feesPercentage').value;
+        profile.pssrName=document.getElementById('pssrName').value;
+      }
+
+      showLoading('Saving to Cloud...');
+      try{
+        await db.collection('profiles').add(profile);
+        alert('Profile Created Successfully.');
+        hideForm();
+        await loadDataFromFirebase();
+      }catch(err){
+        alert('Error: '+err.message);
+      }finally{hideLoading()}
+    }
+
+    async function exportToCSV(){
+      if(profiles.length===0){alert('No data to export');return}
+      showLoading('Preparing CSV...');
+      try{
+        let csv="Name,Rank,CDC Number,Phone,Address,Passport Number,Passport Expiry,Title,Revalidation Type,Remark,Certificates";
+        if(profiles.some(p=>p.title==='NEW CDC')){
+          csv+=",NRC,Father's Name,Mother's Name,Birthdate,Distinguishing Mark,Fees,Fees Percentage,PSSR Name";
+        }
+        csv+="\n";
+        profiles.forEach(p=>{
+          const row=[
+            `"${p.name}"`,`"${p.rank}"`,`"${p.cdcNumber}"`,`"${p.phone}"`,`"${p.address}"`,
+            `"${p.passportNumber||''}"`,`"${p.passportExpiry||''}"`,`"${p.title||''}"`,`"${p.revalidationType||''}"`,
+            `"${p.remark||''}"`,`"${p.certificates||''}"`
+          ];
+          if(p.title==='NEW CDC'){
+            row.push(
+              `"${p.nrc||''}"`,`"${p.fatherName||''}"`,`"${p.motherName||''}"`,`"${p.birthdate||''}"`,
+              `"${p.distinguishingMark||''}"`,`"${p.fees||''}"`,`"${p.feesPercentage||''}"`,`"${p.pssrName||''}"`
+            );
+          }
+          csv+=row.join(',')+"\n";
+        });
+        const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+        const url=URL.createObjectURL(blob);
+        const a=document.createElement('a');
+        a.href=url;a.download='seaman_profiles_export.csv';a.style.visibility='hidden';
+        document.body.appendChild(a);a.click();document.body.removeChild(a);
+        updateSyncStatus('Export Done','connected');
+      }catch(err){alert('Export failed: '+err.message)}finally{hideLoading()}
+    }
+
+    function showLoading(text='Processing...'){loadingText.textContent=text;loading.style.display='block'}
+    function hideLoading(){loading.style.display='none'}
+
+    function showTitleDialog(){
+      titleDialog.style.display='block';
+      searchContainer.style.display='none';
+      formContainer.style.display='none';
+      resetTitleOptions();
+      titleDialog.scrollIntoView({behavior:'smooth'});
+    }
+
+    function hideTitleDialog(){
+      titleDialog.style.display='none';
+      // Also clear any docs rendered inside form
+      revalidationDocsContainer.innerHTML='';
+      revalidationDocsContainer.classList.add('hidden-field');
+    }
+
+    function selectTitle(title){
+      selectedTitle=title;
+      if(title==='NEW CDC'){
+        newCDCOption.classList.add('active');
+        revalidationOption.classList.remove('active');
+        revalidationSubOptions.classList.remove('active');
+        revalidationSubOptions.style.display='none';
+      }else if(title==='REVALIDATION'){
+        revalidationOption.classList.add('active');
+        newCDCOption.classList.remove('active');
+        revalidationSubOptions.classList.add('active');
+        revalidationSubOptions.style.display='block';
+      }
+    }
+
+    function selectRevalidationType(type){
+      selectedRevalidationType=type;
+      if(type==='CREW'){
+        crewOption.classList.add('active');
+        officerOption.classList.remove('active');
+      }else{
+        officerOption.classList.add('active');
+        crewOption.classList.remove('active');
+      }
+    }
+
+    function confirmTitleSelection(){
+      if(!selectedTitle){alert('Please select a document type');return}
+      if(selectedTitle==='REVALIDATION' && !selectedRevalidationType){alert('Please select a revalidation type');return}
+      hideTitleDialog();
+      showForm();
+      renderRevalidationDocsIntoForm();
+    }
+
+    function renderRevalidationDocsIntoForm(){
+      revalidationDocsContainer.innerHTML='';
+      revalidationDocsContainer.classList.add('hidden-field');
+      if(selectedTitle!=='REVALIDATION') return;
+
+      const source=(selectedRevalidationType==='CREW')?crewDocsTemplate:officerDocsTemplate;
+      if(!source) return;
+
+      const clone=source.cloneNode(true);
+      // remove id to avoid duplicates; keep input names
+      clone.removeAttribute('id');
+      // ensure inputs are enabled and unchecked
+      clone.querySelectorAll('input[type="checkbox"]').forEach(cb=>{cb.checked=false;cb.disabled=false;});
+      clone.classList.remove('hidden-field');
+      clone.style.display='block';
+
+      revalidationDocsContainer.appendChild(clone);
+      revalidationDocsContainer.classList.remove('hidden-field');
+    }
+
+    function resetTitleOptions(){
+      selectedTitle='';selectedRevalidationType='';
+      [newCDCOption,revalidationOption,crewOption,officerOption,revalidationSubOptions].forEach(el=>el.classList.remove('active'));
+      revalidationSubOptions.style.display='none';
+      // Clear dialog templates (stay hidden)
+      revalidationDocsContainer.innerHTML='';
+      revalidationDocsContainer.classList.add('hidden-field');
+      // Uncheck all possible certs
+      document.querySelectorAll('input[name="crewCertificates"],input[name="officerCertificates"]').forEach(cb=>cb.checked=false);
+    }
+
+    function showForm(){
+      formContainer.style.display='block';
+      searchContainer.style.display='none';
+      profileForm.reset();
+      updateProgressBar();
+
+      if(stream){stream.getTracks().forEach(t=>t.stop());stream=null}
+      webcamPreview.innerHTML='<i class="fa-solid fa-camera" style="font-size:40px;opacity:.5"></i>';
+      capturedPhoto=null;capturePhoto.disabled=true;retakePhoto.disabled=true;
+
+      updateFormFields();
+      formContainer.scrollIntoView({behavior:'smooth'});
+    }
+
+    function updateFormFields(){
+      const newCDCOnlyFields=document.querySelectorAll('.new-cdc-only');
+      if(selectedTitle==='NEW CDC'){
+        newCDCOnlyFields.forEach(f=>f.classList.remove('hidden-field'));
+        rankSelect.innerHTML=`
+          <option value="">Select Rank</option>
+          <option value="D/R">D/R</option>
+          <option value="E/R">E/R</option>
+          <option value="ET/R">ET/R</option>
+          <option value="G/S">G/S</option>
+          <option value="C/CK">C/CK</option>
+        `;
+        // hide revalidation docs container if previously shown
+        revalidationDocsContainer.classList.add('hidden-field');
+        revalidationDocsContainer.innerHTML='';
+      }else if(selectedTitle==='REVALIDATION'){
+        newCDCOnlyFields.forEach(f=>f.classList.add('hidden-field'));
+        if(selectedRevalidationType==='OFFICER'){
+          rankSelect.innerHTML=`
+            <option value="">Select Officer Rank</option>
+            <option value="Master">Master</option>
+            <option value="C/O">C/O</option>
+            <option value="2/O">2/O</option>
+            <option value="3/O">3/O</option>
+            <option value="C/E">C/E</option>
+            <option value="2/E">2/E</option>
+            <option value="3/E">3/E</option>
+            <option value="4/E">4/E</option>
+            <option value="E/E">E/E</option>
+          `;
+        }else{
+          rankSelect.innerHTML=`
+            <option value="">Select Crew Rank</option>
+            <option value="BSN">BSN</option>
+            <option value="A/B">A/B</option>
+            <option value="O/S">O/S</option>
+            <option value="FTR">FTR</option>
+            <option value="OLR">OLR</option>
+            <option value="WPR">WPR</option>
+            <option value="D/C">D/C</option>
+            <option value="E/C">E/C</option>
+            <option value="Cruise Crew">Cruise Crew</option>
+          `;
+        }
+        // revalidationDocsContainer will be populated by renderRevalidationDocsIntoForm()
+      }
+    }
+
+    function hideForm(){
+      formContainer.style.display='none';
+      resetTitleOptions();
+    }
+
+    function showSearch(){
+      searchContainer.style.display='block';
+      formContainer.style.display='none';
+      titleDialog.style.display='none';
+      searchContainer.scrollIntoView({behavior:'smooth'});
+    }
+
+    function updateProgressBar(){
+      const pct=Number(feesPercentage.value||0);
+      feesProgress.style.width=`${pct}%`;
+      if(pct<30) feesProgress.style.background='#ff453a';
+      else if(pct<70) feesProgress.style.background='#ffd60a';
+      else feesProgress.style.background='#30d158';
+    }
+
+    function searchProfiles(){
+      const term=(searchInput.value||'').toLowerCase();
+      const filtered=profiles.filter(p=>
+        (p.name&&p.name.toLowerCase().includes(term))||
+        (p.rank&&p.rank.toLowerCase().includes(term))||
+        (p.cdcNumber&&p.cdcNumber.toLowerCase().includes(term))
+      );
+      displayProfiles(filtered);
+    }
+
+    function searchByDate(){
+      const fromDate=dateFrom.value,toDate=dateTo.value;
+      if(!fromDate&&!toDate){alert('Please enter at least one date');return}
+      const filtered=profiles.filter(p=>{
+        if(!p.timestamp) return false;
+        const d=new Date(p.timestamp.seconds*1000);
+        const from=fromDate?new Date(fromDate):new Date(0);
+        const to=toDate?new Date(toDate):new Date();
+        from.setHours(0,0,0,0);to.setHours(23,59,59,999);
+        return d>=from && d<=to;
+      });
+      displayProfiles(filtered);
+    }
+
+    function displayProfiles(list){
+      profileCards.innerHTML='';
+      if(list.length===0){
+        noResults.innerHTML='<i class="fa-solid fa-magnifying-glass" style="font-size:40px;margin-bottom:20px;opacity:.5"></i><br>No matches found.';
+        noResults.style.display='block';
+        profileCards.appendChild(noResults);
+        return;
+      }
+      noResults.style.display='none';
+      list.forEach(p=>{
+        const card=document.createElement('div');card.className='profile-card';
+        const initials=p.name?p.name.split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase():'??';
+        card.innerHTML=`
+          <div class="card-header">
+            <div class="card-avatar">${initials}</div>
+            <div><h3>${p.name}</h3><p>${p.rank}</p></div>
+          </div>
+          <div class="card-body">
+            <div class="card-details">
+              <div class="card-detail"><span class="detail-label">CDC No.</span><span class="detail-value">${p.cdcNumber}</span></div>
+              <div class="card-detail"><span class="detail-label">Mobile</span><span class="detail-value">${p.phone}</span></div>
+              <div class="card-detail"><span class="detail-label">Type</span><span class="detail-value">${p.title||'N/A'}</span></div>
+              ${p.certificates?`<div class="card-detail"><span class="detail-label">Docs</span><span class="detail-value" style="font-size:12px;max-width:150px;text-align:right">${p.certificates}</span></div>`:''}
+              ${p.title==='NEW CDC'?`
+                <div class="card-detail"><span class="detail-label">Fees</span><span class="detail-value">$${p.fees||'0'}</span></div>
+                <div class="progress-bar"><div class="progress" style="width:${p.feesPercentage||'0'}%;background:${(p.feesPercentage||0)<100?((p.feesPercentage||0)<50?'#ff453a':'#ffd60a'):'#30d158'}"></div></div>
+              `:''}
+            </div>
+          </div>
+        `;
+        card.addEventListener('click',()=>{
+          const titleText=p.title?`\n\n📄 Document Type: ${p.title}`:'';
+          const revText=p.revalidationType?`\nRevalidation Type: ${p.revalidationType}`:'';
+          const certText=p.certificates?`\n\n🔖 Certificates:\n${p.certificates}`:'';
+          const pssrText=p.pssrName?`\n\n🏢 PSSR:\nName: ${p.pssrName}`:'';
+          const passportText=p.passportNumber?`\n\n🛂 Passport:\nNumber: ${p.passportNumber}\nExpiry: ${p.passportExpiry||'N/A'}`:'';
+          const remarkText=p.remark?`\n\n📝 Remark:\n${p.remark}`:'';
+          const newCDCText=p.title==='NEW CDC'
+            ?`\n\n📘 NEW CDC Details:\nNRC: ${p.nrc||'N/A'}\nFather: ${p.fatherName||'N/A'}\nMother: ${p.motherName||'N/A'}\nBirthdate: ${p.birthdate||'N/A'}\nMark: ${p.distinguishingMark||'N/A'}\nFees: $${p.fees||'0'}\nPaid: ${p.feesPercentage||'0'}%`
+            :'';
+          alert(`SEAMAN PROFILE\n------------------\nName: ${p.name}\nRank: ${p.rank}\nCDC: ${p.cdcNumber}\nPhone: ${p.phone}\nAddress: ${p.address}${titleText}${revText}${newCDCText}${certText}${pssrText}${passportText}${remarkText}`);
+        });
+        profileCards.appendChild(card);
+      });
+    }
+
+    async function startWebcam(){
+      try{
+        stream=await navigator.mediaDevices.getUserMedia({video:true,audio:false});
+        const video=document.createElement('video');
+        video.srcObject=stream;video.autoplay=true;video.playsInline=true;
+        video.style.width='100%'; video.style.height='100%'; video.style.objectFit='cover';
+        webcamPreview.innerHTML='';webcamPreview.appendChild(video);
+        capturePhoto.disabled=false;startCamera.disabled=true;
+      }catch(err){alert('Unable to access webcam. Please check permissions.')}
+    }
+
+    function captureWebcam(){
+      if(!stream) return;
+      const video=webcamPreview.querySelector('video');
+      const canvas=document.createElement('canvas');
+      const ctx=canvas.getContext('2d');
+      canvas.width=video.videoWidth;canvas.height=video.videoHeight;
+      ctx.drawImage(video,0,0,canvas.width,canvas.height);
+      capturedPhoto=canvas.toDataURL('image/jpeg');profilePhoto.value=capturedPhoto;
+      stream.getTracks().forEach(t=>t.stop());stream=null;
+      const img=document.createElement('img');img.src=capturedPhoto;
+      img.style.width='100%'; img.style.height='100%'; img.style.objectFit='cover';
+      webcamPreview.innerHTML='';webcamPreview.appendChild(img);
+      capturePhoto.disabled=true;retakePhoto.disabled=false;
+    }
+
+    function retakeWebcam(){
+      capturedPhoto=null;profilePhoto.value='';
+      webcamPreview.innerHTML='<i class="fa-solid fa-camera" style="font-size:40px;opacity:.5"></i>';
+      capturePhoto.disabled=true;retakePhoto.disabled=true;startCamera.disabled=false;
+    }
+  </script>
+</body>
+</html>
